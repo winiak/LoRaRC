@@ -3,12 +3,12 @@ enum stateMachineDef {SETUP = 0, TRANSMIT = 1, RECEIVE = 2, BIND = 3 };
 
 
 // Transmitter or Receiver
-#define TX_module
-//#define RX_module
+//#define TX_module
+#define RX_module
 
 // Communication type
-#define PPM_module  // using ICP for TX or declared for TX
-//#define IBUS_module   // using UART
+//#define PPM_module  // using ICP for TX or declared for TX
+#define IBUS_module   // using UART
 //#define FRSKY_module
 
 // Transmitting power in dBm: 2 to 20, default 17
@@ -26,7 +26,7 @@ unsigned long F_rate_high = 24000; //us
 byte spread_factor = 6;
 
 #define base_frequency  868100000
-#define frequency_step  50000
+#define frequency_step  100000
 const uint8_t hop_list[] = {5,7,12};
 
 // Servos & channels
