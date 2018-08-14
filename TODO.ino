@@ -9,7 +9,6 @@
  * - test ibus
  * - failsafe
  * - test link
- * - test link
  * 
  * - dynamic Signal Bandwidth
  * - in-flight setup
