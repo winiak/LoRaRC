@@ -13,9 +13,11 @@
 
   stateMachineDef stateMachine = TRANSMIT;
   unsigned long TX_period = F_rate_low;  // 7700 / 20000 / 40000  us
+  unsigned long last_frame_received;
   unsigned long ibus_frame_period = 7000; //us
   unsigned long timer_start, timer_stop;
   unsigned long lost_frames = 0;
+  char current_channel = 0;
   unsigned char TX_Buffer[12];
   unsigned char TX_Buffer_Len = 0;
   unsigned char RX_Buffer[12];
@@ -39,7 +41,7 @@ void setup() {
 
 */
   LoRa.setPins(10, 9, 4);
-  if (!LoRa.begin(base_frequency)) {
+  if (!LoRa.begin(base_frequency + (hop_list[0] * 50000))) {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
@@ -101,6 +103,9 @@ void loop() {
 #ifdef RX_module
   TX_Buffer_Len = 6;
   RX_Buffer_Len = 12;
+    //  last_frame_received
+    //  TX_period
+    //  lost_frames
   
   switch (stateMachine) {
     case RECEIVE:
@@ -121,7 +126,11 @@ void loop() {
       stateMachine = RECEIVE;
       break;
   }
-
+  // 
+    if (micros() > last_frame_received) {
+    last_frame_received = micros() + (TX_period * 2);
+    Hopping();
+  }
   // kopiowanie danych z bufora RX do serw
   // obsługa failsafe
   // obsługa generowania sygnalu wyjsciowego
@@ -130,6 +139,13 @@ void loop() {
 #endif //RX_module
   
   wdt_reset();
+}
+
+void Hopping() {
+  current_channel++;
+  if (current_channel => sizeof(hop_list))
+    current_channel = 0;
+  LoRa.setFrequency(base_frequency + (hop_list[0] * 50000));
 }
 
 int receiveData(char data_len) {
