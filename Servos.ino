@@ -1,4 +1,8 @@
-
+/*
+ * Servo functions used in project.
+ * 
+ * Thanks to Zendes for SBUS encoding/decoding code https://github.com/zendes/SBUS
+ */
 
 char buildServoData() 
 {

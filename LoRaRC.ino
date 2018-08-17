@@ -2,8 +2,8 @@
  * LoRaLRS project by Konrad Winiarski
  * 
  * Using LoRa library developed by Sandeep Mistry: https://github.com/sandeepmistry/arduino-LoRa
- * Special thanks to:
- * - Jacek Szostak
+ * Special thanks to Jacek S. for inspiration ;)
+ * 
  */
 
 #include <SPI.h>
@@ -18,6 +18,8 @@
   unsigned long timer_start, timer_stop;
   unsigned long lost_frames = 0;
   uint8_t current_channel = 0;
+  byte current_power = tx_power_low;
+  byte power_delay_counter = TX_POWER_DELAY_FILTER;
   unsigned char TX_Buffer[12];
   unsigned char TX_Buffer_Len = 0;
   unsigned char RX_Buffer[12];
@@ -40,7 +42,7 @@ void setup() {
   LoRa.setTxPower(5); // 2 to 20, default 17
 
 */
-  LoRa.setPins(10, 9, 4);
+  LoRa.setPins(10, 9, 2);   //(ss, reset, dio0) dio is optional but must be interrupt capable via attachInterrupt(...): prefered: nSS-10, nRESET-9, DI0-2
   if (!LoRa.begin(base_frequency + (hop_list[0] * 50000))) {
     Serial.println("Starting LoRa failed!");
     while (1);
@@ -53,8 +55,12 @@ void setup() {
   
   LoRa.enableCrc();
   //LoRa.disableCrc();
-
-  
+  wdt_reset();
+  #ifdef DEBUG_ANALYZER
+    #ifdef TX_module
+    Serial.println("TX RSSI\tRX RSSI\tLost\tPacket t[ms]\tPower [dBm]");
+    #endif //TX_module
+  #endif // DEBUG_ANALYZER
 }
 
 void loop() {
@@ -72,27 +78,53 @@ void loop() {
 #ifdef TX_module
   switch (stateMachine) {
     case TRANSMIT:    // transmit data then switch to RECEIVE
-      servoTester();
+      servoTester();                    // servo tester - change servo values continuously
       Serial.println();
       Hopping();
+      if (no_RX_ack > 0) {                // ACKonwlege, check for return of the telemetry data
+        #ifdef DEBUG_RADIO_EXCH
+        Serial.print("\t\t\t NO ACK: ");
+        Serial.print(no_RX_ack);
+        #endif
+        if (no_RX_ack > TX_POWER_DELAY_FILTER) {             // if no ACK for (TX_POWER_DELAY_FILTER - two times hopping) frames, then assume no telemetry (and RSSI) is available
+          TX_RSSI = 0;
+          RX_RSSI = 0;
+          if (no_RX_ack % TX_POWER_DELAY_FILTER * current_power * current_power == 0)     // the higher power is set, the longer time is needed to increase power by the STEP
+            power_increase();
+        }
+      }
       TX_Buffer_Len = buildServoData();
       packet_timer = micros();
       sendBufferData();
+      //Serial.print(micros() - packet_timer); 
       stateMachine = RECEIVE;
+      no_RX_ack++;
       break;
     case RECEIVE:     // stay in RECEIVE and wait for data until next TX period
-      no_RX_ack++;
+      
       if (receiveData(6)) {
         no_RX_ack = 0;
-        TX_RSSI = RX_Buffer[0] - 255;
+        TX_RSSI = RX_Buffer[0];// - 255;  to display byte values instead of dBm
+        #ifdef DEBUG_CH_FREQ
         Serial.print("\tHC: ");
         Serial.print(current_channel);
+        #endif
+        #ifdef DEBUG_RADIO_EXCH
         Serial.print("\tTr RSSI: ");
         Serial.print(TX_RSSI);
         Serial.print("\tRe RSSI: ");
         Serial.print(RX_RSSI);
         Serial.print("\tPacket exchange time: ");
-        Serial.print(micros() - packet_timer);        
+        Serial.print(micros() - packet_timer);  
+        #endif
+        if (TX_RSSI < power_thr_low && power_delay_counter-- == 0) {
+          power_increase();
+          power_delay_counter = TX_POWER_DELAY_FILTER;
+        }
+        if (TX_RSSI > power_thr_high && power_delay_counter-- == 0) {
+          power_decrease();
+          power_delay_counter = TX_POWER_DELAY_FILTER;
+        }
       }
       break;
     case SETUP:
@@ -100,11 +132,25 @@ void loop() {
     default: // controller
       break;
   }
+  // State machine controller
   if (micros() > transmit_time) {
+    #ifdef DEBUG_ANALYZER
+      //Serial.println("TX RSSI\tRX RSSI\tLost");
+      Serial.print(TX_RSSI);
+      Serial.print("\t");
+      Serial.print(RX_RSSI);
+      Serial.print("\t");
+      Serial.print(no_RX_ack);
+      Serial.print("\t");
+      Serial.print(byte((micros() - packet_timer)/1000));
+      Serial.print("\t");
+      Serial.print(current_power);
+    #endif
     transmit_time = micros() + TX_period;
     timer_start = micros();
     stateMachine = TRANSMIT;
   }
+
 #endif // TX_module
 
 /**
@@ -123,8 +169,8 @@ void loop() {
         Serial.println(""); Serial.print(s); Serial.print("\t");
         stateMachine = TRANSMIT;
         decodeServoData();
-        Serial.print(micros() - RX_last_frame_received); Serial.print("\t");
-        RX_last_frame_received = micros();
+        Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
+        RX_last_frame_received = millis();
         RX_hopping_time = micros()  + (TX_period * 2);
       }
       break;
@@ -151,7 +197,7 @@ void loop() {
   if (micros() > RX_hopping_time) {
     RX_hopping_time = micros()  + (TX_period * 2);
     Hopping();
-    Serial.print("No frame since: "); Serial.print(RX_last_frame_received); Serial.print("\thop: "); Serial.println(current_channel); 
+    Serial.print(" No frame since: "); Serial.print(millis() - RX_last_frame_received); Serial.print("ms\thop: "); Serial.println(current_channel); 
   }
 
   // kopiowanie danych z bufora RX do serw
@@ -164,6 +210,27 @@ void loop() {
   wdt_reset();
 }
 
+byte power_increase() {
+  if (current_power < tx_power_high)
+    current_power = current_power + tx_power_step;
+  else
+    return current_power;
+  LoRa.sleep();
+  LoRa.setTxPower(current_power);
+  LoRa.idle();
+  return current_power;
+}
+
+byte power_decrease() {
+  if (current_power > tx_power_low)
+    current_power = current_power - tx_power_step;
+  else
+    return current_power;
+  LoRa.sleep();
+  LoRa.setTxPower(current_power);
+  LoRa.idle();
+  return current_power;
+}
 
 void Hopping() {
   long f;
@@ -172,7 +239,9 @@ void Hopping() {
   if (current_channel >= sizeof(hop_list))
     current_channel = 0;
   f = base_frequency + (hop_list[current_channel] * frequency_step);  //
-  Serial.print(f);
+  #ifdef DEBUG_CH_FREQ
+    Serial.print(f);
+  #endif
   LoRa.setFrequency(f);
   LoRa.idle();
 }
@@ -189,7 +258,7 @@ int receiveData(char data_len) {
     }
     //Serial.print("] \t");
     // print RSSI of packet
-    RX_RSSI = LoRa.packetRssi();
+    RX_RSSI = LoRa.packetRssi() + 255;  // remove +255 to display byte values instead of dBm
     //Serial.print("RX RSSI: ");
     //Serial.println(RX_RSSI);    
     //Serial.print(" SNR: ");
