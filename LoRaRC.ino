@@ -3,6 +3,7 @@
  * 
  * Using LoRa library developed by Sandeep Mistry: https://github.com/sandeepmistry/arduino-LoRa
  * Special thanks to Jacek S. for inspiration ;)
+ * RTF95 documentation: http://www.hoperf.com/upload/rf/RFM95_96_97_98W.pdf
  * 
  */
 
@@ -33,7 +34,7 @@ void setup() {
   // while (!Serial);
   wdt_enable(WDTO_250MS);
   
-  Serial.println("LoRa Sender");
+  Serial.println("LoRa for Remote Control");
 /*
   LoRa.setSignalBandwidth(125E3); // 7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, and 250E3.
   LoRa.setSpreadingFactor(7); // 6 to 12 - 6 requires IMPLICIT
@@ -58,7 +59,7 @@ void setup() {
   wdt_reset();
   #ifdef DEBUG_ANALYZER
     #ifdef TX_module
-    Serial.println("TX RSSI\tRX RSSI\tLost\tPacket t[ms]\tPower [dBm]");
+    Serial.println("TX RSSI\tRX RSSI\tLost\tPacket t[ms]\tTX Pwr[dBm]\tRX Pwr[dBm]");
     #endif //TX_module
   #endif // DEBUG_ANALYZER
 }
@@ -144,7 +145,9 @@ void loop() {
       Serial.print("\t");
       Serial.print(byte((micros() - packet_timer)/1000));
       Serial.print("\t");
-      Serial.print(current_power);
+      Serial.print(current_power);      
+      Serial.print("\t");
+      Serial.print(RX_Buffer[1]);
     #endif
     transmit_time = micros() + TX_period;
     timer_start = micros();
@@ -172,11 +175,19 @@ void loop() {
         Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
         RX_last_frame_received = millis();
         RX_hopping_time = micros()  + (TX_period * 2);
+        if (RX_RSSI < power_thr_low && power_delay_counter-- == 0) {
+          power_increase();
+          power_delay_counter = TX_POWER_DELAY_FILTER;
+        }
+        if (RX_RSSI > power_thr_high && power_delay_counter-- == 0) {
+          power_decrease();
+          power_delay_counter = TX_POWER_DELAY_FILTER;
+        }
       }
       break;
     case TRANSMIT:
       TX_Buffer[0] = RX_RSSI;
-      TX_Buffer[1] = 0;
+      TX_Buffer[1] = current_power;
       TX_Buffer[2] = 0;
       TX_Buffer[3] = 0;
       TX_Buffer[4] = 0;
