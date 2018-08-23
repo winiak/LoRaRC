@@ -4,11 +4,11 @@
  * + Frequency Hopping - CHECKED
  * + Servo signal operation - CHECKED
  * + dynamic TX power CHECKED
- * - dynamic RX power
+ * + dynamic RX power CHECKED
  * - read iBus (Serial -> Servo Buffer)
- * - generate iBus (Check if possible using Interrupts)
+ * + generate iBus w/o Interruption (Check if possible using Interrupts)
  * - test ibus
- * - failsafe
+ * + failsafe
  * - test link
  * 
  * - dynamic Signal Bandwidth

@@ -12,11 +12,19 @@
 #include "config.h"
 #include <avr/wdt.h>
 
-  stateMachineDef stateMachine = TRANSMIT;
-  unsigned long TX_period = F_rate_low;  // 7700 / 20000 / 40000  us
-  unsigned long RX_last_frame_received, RX_hopping_time;
-  unsigned long ibus_frame_period = 7000; //us
-  unsigned long timer_start, timer_stop;
+
+  #ifdef TX_module
+    stateMachineDef stateMachine = TRANSMIT;
+  #endif
+  #ifdef RX_module
+    stateMachineDef stateMachine = RECEIVE;
+  #endif
+  static unsigned long TX_period = F_rate_low;  // 7700 / 20000 / 40000  us
+  static unsigned long ibus_frame_period = 7500; //us (so far the smallest delays with 7,5ms, measured frame rate 7,7 to 8,5ms
+  static unsigned long RX_last_frame_received, RX_hopping_time;
+  static unsigned long RX_frame_time;
+  static unsigned long timer_start, timer_stop;
+
   unsigned long lost_frames = 0;
   uint8_t current_channel = 0;
   byte current_power = tx_power_low;
@@ -28,7 +36,8 @@
   int RX_RSSI;  // RSSI on receiver side
   int TX_RSSI;  // RSSI on transmitter side
 int counter = 0;
-
+  static bool failsafe_state = false;
+  
 void setup() {
   Serial.begin(115200);
   // while (!Serial);
@@ -59,9 +68,15 @@ void setup() {
   wdt_reset();
   #ifdef DEBUG_ANALYZER
     #ifdef TX_module
-    Serial.println("TX RSSI\tRX RSSI\tLost\tPacket t[ms]\tTX Pwr[dBm]\tRX Pwr[dBm]");
+    Serial.println("HC\tTX RSSI\tRX RSSI\tLost\tPacket t[ms]\tTX Pwr[dBm]\tRX Pwr[dBm]\tInput");
     #endif //TX_module
   #endif // DEBUG_ANALYZER
+
+  #ifdef TX_module
+    #ifdef PPM_module
+      setup_module();
+    #endif
+  #endif
 }
 
 void loop() {
@@ -79,7 +94,9 @@ void loop() {
 #ifdef TX_module
   switch (stateMachine) {
     case TRANSMIT:    // transmit data then switch to RECEIVE
-      servoTester();                    // servo tester - change servo values continuously
+      #ifdef TX_SERVO_TESTER
+        servoTester();                    // servo tester - change servo values continuously
+      #endif
       Serial.println();
       Hopping();
       if (no_RX_ack > 0) {                // ACKonwlege, check for return of the telemetry data
@@ -88,8 +105,8 @@ void loop() {
         Serial.print(no_RX_ack);
         #endif
         if (no_RX_ack > TX_POWER_DELAY_FILTER) {             // if no ACK for (TX_POWER_DELAY_FILTER - two times hopping) frames, then assume no telemetry (and RSSI) is available
-          TX_RSSI = 0;
-          RX_RSSI = 0;
+          TX_RSSI = -254;
+          RX_RSSI = -254;
           if (no_RX_ack % TX_POWER_DELAY_FILTER * current_power * current_power == 0)     // the higher power is set, the longer time is needed to increase power by the STEP
             power_increase();
         }
@@ -101,22 +118,17 @@ void loop() {
       stateMachine = RECEIVE;
       no_RX_ack++;
       break;
-    case RECEIVE:     // stay in RECEIVE and wait for data until next TX period
       
+    case RECEIVE:     // stay in RECEIVE and wait for data until next TX period
       if (receiveData(6)) {
         no_RX_ack = 0;
-        TX_RSSI = RX_Buffer[0];// - 255;  to display byte values instead of dBm
+        TX_RSSI = RX_Buffer[0] - 255;// - 255; "0" to display byte values instead of dBm
         #ifdef DEBUG_CH_FREQ
         Serial.print("\tHC: ");
         Serial.print(current_channel);
         #endif
         #ifdef DEBUG_RADIO_EXCH
-        Serial.print("\tTr RSSI: ");
-        Serial.print(TX_RSSI);
-        Serial.print("\tRe RSSI: ");
-        Serial.print(RX_RSSI);
-        Serial.print("\tPacket exchange time: ");
-        Serial.print(micros() - packet_timer);  
+        Serial.print("\tTr RSSI: " + TX_RSSI + "\tRe RSSI: " + RX_RSSI + "\tPacket exchange time: " + micros() - packet_timer);
         #endif
         if (TX_RSSI < power_thr_low && power_delay_counter-- == 0) {
           power_increase();
@@ -137,17 +149,16 @@ void loop() {
   if (micros() > transmit_time) {
     #ifdef DEBUG_ANALYZER
       //Serial.println("TX RSSI\tRX RSSI\tLost");
-      Serial.print(TX_RSSI);
-      Serial.print("\t");
-      Serial.print(RX_RSSI);
-      Serial.print("\t");
-      Serial.print(no_RX_ack);
-      Serial.print("\t");
-      Serial.print(byte((micros() - packet_timer)/1000));
-      Serial.print("\t");
-      Serial.print(current_power);      
-      Serial.print("\t");
-      Serial.print(RX_Buffer[1]);
+      Serial.print(current_channel); Serial.print("\t");
+      Serial.print(TX_RSSI); Serial.print("\t"); 
+      Serial.print(RX_RSSI); Serial.print("\t"); 
+      Serial.print(no_RX_ack); Serial.print("\t"); 
+      Serial.print(byte((micros() - packet_timer)/1000)); Serial.print("\t");
+      Serial.print(current_power); Serial.print("\t"); 
+      Serial.print(RX_Buffer[1]); 
+      #ifdef PPM_module      
+        Serial.print("\t"); Serial.print(check_PPM_corrupted() ? "0" : "111");   
+      #endif
     #endif
     transmit_time = micros() + TX_period;
     timer_start = micros();
@@ -168,11 +179,16 @@ void loop() {
   
   switch (stateMachine) {
     case RECEIVE:
+      //Serial.println("Test");
       if (int s = receiveData(RX_Buffer_Len)) {
-        Serial.println(""); Serial.print(s); Serial.print("\t");
+          #ifdef DEBUG_ANALYZER
+          Serial.println(""); Serial.print(s); Serial.print("\t");
+          #endif
         stateMachine = TRANSMIT;
         decodeServoData();
-        Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
+          #ifdef DEBUG_ANALYZER
+          Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
+          #endif
         RX_last_frame_received = millis();
         RX_hopping_time = micros()  + (TX_period * 2);
         if (RX_RSSI < power_thr_low && power_delay_counter-- == 0) {
@@ -183,6 +199,7 @@ void loop() {
           power_decrease();
           power_delay_counter = TX_POWER_DELAY_FILTER;
         }
+        failsafe_state = false;
       }
       break;
     case TRANSMIT:
@@ -197,23 +214,50 @@ void loop() {
       Hopping();
       stateMachine = RECEIVE;
 
+      calculate_rssi(RX_RSSI);
+      manage_servos();
+      
+
       //Serial.println(micros() - packet_timer);
+      #ifdef DEBUG_ANALYZER
       for (int i = 0; i < SERVO_CHANNELS; i++) {
         Serial.print("\t");
         Serial.print(Servo_Buffer[i]);
       }
+      #endif
       break;
   }
   // forced hopping (2 times slower than TX) if no data received
   if (micros() > RX_hopping_time) {
     RX_hopping_time = micros()  + (TX_period * 2);
     Hopping();
-    Serial.print(" No frame since: "); Serial.print(millis() - RX_last_frame_received); Serial.print("ms\thop: "); Serial.println(current_channel); 
+    #ifdef DEBUG_CH_FREQ
+    Serial.print("No FR: ");
+    Serial.print(millis() - RX_last_frame_received);
+    Serial.print("ms\thop: ");
+    Serial.println(current_channel);
+    #endif
   }
-
-  // kopiowanie danych z bufora RX do serw
-  // obsługa failsafe
-  // obsługa generowania sygnalu wyjsciowego
+  if (micros() > RX_frame_time) {
+    #ifdef IBUS_module
+    // Show delay of each frame
+    // Serial.print("\t Delayed[us]=");
+    // Serial.println(micros() - RX_frame_time, DEC);
+    send_frame();
+    // Show calculated RSSI
+    //Serial.print("\t");
+    //Serial.println(calculate_rssi(RX_RSSI));
+    RX_frame_time = micros() + ibus_frame_period;
+    #endif;    
+  }
+  // Failsafe
+  if (millis() - RX_last_frame_received > FAILSAFE_DELAY_MS) {
+    failsafe_state = true;
+    // IBUS - stop transmitting data
+    // PPM - send data out of range
+    // Serial.print("Failsafe !!!");
+  }
+      
   // obsługa konfiguracji
   
 #endif //RX_module
@@ -221,72 +265,5 @@ void loop() {
   wdt_reset();
 }
 
-byte power_increase() {
-  if (current_power < tx_power_high)
-    current_power = current_power + tx_power_step;
-  else
-    return current_power;
-  LoRa.sleep();
-  LoRa.setTxPower(current_power);
-  LoRa.idle();
-  return current_power;
-}
 
-byte power_decrease() {
-  if (current_power > tx_power_low)
-    current_power = current_power - tx_power_step;
-  else
-    return current_power;
-  LoRa.sleep();
-  LoRa.setTxPower(current_power);
-  LoRa.idle();
-  return current_power;
-}
-
-void Hopping() {
-  long f;
-  LoRa.sleep();
-  current_channel++;
-  if (current_channel >= sizeof(hop_list))
-    current_channel = 0;
-  f = base_frequency + (hop_list[current_channel] * frequency_step);  //
-  #ifdef DEBUG_CH_FREQ
-    Serial.print(f);
-  #endif
-  LoRa.setFrequency(f);
-  LoRa.idle();
-}
-
-int receiveData(char data_len) {
-  int packetSize = LoRa.parsePacket(data_len);
-  char i = 0;
-  if (packetSize) {
-    //Serial.print("[");
-    while (LoRa.available()) {
-      RX_Buffer[i] = (char)LoRa.read();
-      //Serial.print(RX_Buffer[i]);
-      i++;
-    }
-    //Serial.print("] \t");
-    // print RSSI of packet
-    RX_RSSI = LoRa.packetRssi() + 255;  // remove +255 to display byte values instead of dBm
-    //Serial.print("RX RSSI: ");
-    //Serial.println(RX_RSSI);    
-    //Serial.print(" SNR: ");
-    //Serial.println(LoRa.packetSnr());
-  }
-  RX_Buffer_Len = packetSize;
-  return packetSize;
-}
-
-bool sendBufferData() {
-  char sent_data_len;
-  if (TX_Buffer_Len == 0)
-    return false;
-  LoRa.beginPacket(true);   // false - explicit, true - implicit
-  sent_data_len = LoRa.write(TX_Buffer, TX_Buffer_Len);
-  LoRa.endPacket();
-  TX_Buffer_Len = 0;
-  return sent_data_len;
-}
 
