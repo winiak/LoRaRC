@@ -28,3 +28,6 @@ Hardware:
 - Arduino Pro Mini 5V/16MHz with voltage regulator changed to 3,3V
 - RFM95 for 868MHz (see https://github.com/sandeepmistry/arduino-LoRa for wiring description)
 - Antenna (Dipole, Moxon)
+
+Testing:
+- First in flight testing (not as controller) - altitude up to 800m and distance up to 900m. Video taken during the flight: https://youtu.be/bZgweGUDXOE ; Report from the flight: https://github.com/winiak/LoRaRC/blob/master/Reports/link_test_19.08.2018.xlsx
