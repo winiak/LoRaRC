@@ -52,7 +52,7 @@ void setup() {
   LoRa.setTxPower(5); // 2 to 20, default 17
 
 */
-  LoRa.setPins(10, 9, 2);   //(ss, reset, dio0) dio is optional but must be interrupt capable via attachInterrupt(...): prefered: nSS-10, nRESET-9, DI0-2
+  LoRa.setPins(10, A0, 2);   //(ss, reset, dio0) dio is optional but must be interrupt capable via attachInterrupt(...): prefered: nSS-10, nRESET-9, DI0-2
   if (!LoRa.begin(base_frequency + (hop_list[0] * 50000))) {
     Serial.println("Starting LoRa failed!");
     while (1);
@@ -264,6 +264,3 @@ void loop() {
   
   wdt_reset();
 }
-
-
-
