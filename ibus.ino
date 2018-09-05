@@ -37,7 +37,7 @@ void setup_module() {
     // module works on hardware serial - must be 115200
 }
 
-void send_frame() {
+void send_servo_frame() {
   static long ibus_frame_timer;
   if (failsafe_state) {
     Serial.println("Failsafe");

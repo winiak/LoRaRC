@@ -4,7 +4,9 @@ LoRa for Remote Control
 The goal of this project is to use LoRa modules (RFM95/96) with Arduino to remotely control an aircraft or drone. The expectation is that using LoRa modules shall improve flight distance due to great sensitivity. The drawback is data rate limited by the technology.
 
 Beware!
-This project is for hobby and technology "exploration" purposes. Not for commercial use! You are free to use it for your personal purposes. I am not taking the responsibility for the robustness or the stability of this solution. Use at your own risk. Make sure you are working within your country regulations and limitations. Play safe, have fun :).
+This project is for hobby and technology "exploration" purposes. Not for commercial use! You are free to use it for your personal purposes. I am not taking the responsibility for the robustness or the stability of this solution. Use at your own risk. Make sure you are working within your country regulations and limitations. 
+See frequencies over the countries: https://www.thethingsnetwork.org/docs/lorawan/frequency-plans.html
+Play safe, have fun :).
 
 There are following targets to be achieved in this project:
 - low cost communication modules (RFM95 + Arduino ProMini)

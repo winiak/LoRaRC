@@ -240,6 +240,7 @@ void loop() {
     #endif
   }
   if (micros() > RX_frame_time) {
+    // IBUS
     #ifdef IBUS_module
       #ifdef DEBUG_RX_OUTPUT
         Show delay of each frame
@@ -247,17 +248,25 @@ void loop() {
         Serial.println(micros() - RX_frame_time, DEC);
       #endif //DEBUG_RX_OUTPUT
     if (!failsafe_state)
-      send_frame();
+      send_servo_frame();
     // Show calculated RSSI
     //Serial.print("\t");
     //Serial.println(calculate_rssi(RX_RSSI));
     RX_frame_time = micros() + ibus_frame_period;
-    #endif;    
+    #endif // IBUS_module
+
+    // MSP
+    #ifdef MSP_module
+    // TODO: every 5th frame send request for data and block 
+    // the send_servo_frame() until data is received - do not wait too long (max 2 frames)
+      if (!failsafe_state)
+        send_servo_frame();
+    #endif // MSP_module
   }
   // Failsafe
   if (millis() - RX_last_frame_received > FAILSAFE_DELAY_MS) {
+    // IBUS, MSP - stop transmitting data
     failsafe_state = true;
-    // IBUS - stop transmitting data
     // PPM - send data out of range
     set_servos_failsafe();
     Serial.print("Failsafe !!!");
