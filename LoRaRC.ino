@@ -35,7 +35,8 @@
   unsigned char RX_Buffer_Len = 0;
   int RX_RSSI;  // RSSI on receiver side
   int TX_RSSI;  // RSSI on transmitter side
-int counter = 0;
+  int counter = 0;
+  
   static bool failsafe_state = false;
   
 void setup() {
@@ -52,7 +53,7 @@ void setup() {
   LoRa.setTxPower(5); // 2 to 20, default 17
 
 */
-  LoRa.setPins(10, A0, 2);   //(ss, reset, dio0) dio is optional but must be interrupt capable via attachInterrupt(...): prefered: nSS-10, nRESET-9, DI0-2
+  LoRa.setPins(NSS_PIN, NRESET_PIN, DIO0_PIN);   //(ss, reset, dio0) dio is optional but must be interrupt capable via attachInterrupt(...): prefered: nSS-10, nRESET-9, DI0-2
   if (!LoRa.begin(base_frequency + (hop_list[0] * 50000))) {
     Serial.println("Starting LoRa failed!");
     while (1);
@@ -240,10 +241,13 @@ void loop() {
   }
   if (micros() > RX_frame_time) {
     #ifdef IBUS_module
-    // Show delay of each frame
-    // Serial.print("\t Delayed[us]=");
-    // Serial.println(micros() - RX_frame_time, DEC);
-    send_frame();
+      #ifdef DEBUG_RX_OUTPUT
+        Show delay of each frame
+        Serial.print("\t Delayed[us]=");
+        Serial.println(micros() - RX_frame_time, DEC);
+      #endif //DEBUG_RX_OUTPUT
+    if (!failsafe_state)
+      send_frame();
     // Show calculated RSSI
     //Serial.print("\t");
     //Serial.println(calculate_rssi(RX_RSSI));
@@ -255,7 +259,8 @@ void loop() {
     failsafe_state = true;
     // IBUS - stop transmitting data
     // PPM - send data out of range
-    // Serial.print("Failsafe !!!");
+    set_servos_failsafe();
+    Serial.print("Failsafe !!!");
   }
       
   // obsługa konfiguracji

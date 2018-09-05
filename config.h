@@ -25,6 +25,7 @@ int power_thr_high = -75;  // testing: 190 (-65); flying:  180 (-75)
 int power_thr_low = -95;   // testing: 180 (-75); flying:  160 (-95)
 byte tx_power_step = 2;
 #define TX_POWER_DELAY_FILTER sizeof(hop_list)*2
+
 // Signal bandwidth and frame time 
 // full range 7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, 250E3, 500E3.
 // measured (16Bytes from Transmitter, 6Bytes from Receiver : 
@@ -52,8 +53,12 @@ unsigned int Servo_Failsafe[SERVO_CHANNELS] = {1500, 1500, 900, 1500, 1500, 1500
 #define INJECT_RSSI_IN_CH 7
 
 // PPM 
-  #define PPM_OUT 8   
-  #define PPM_OUT_HIGH PORTB |= _BV(0)
-  #define PPM_OUT_LOW PORTB &= ~_BV(0)
-  #define PPM_IN  8 // ICP1
+#define PPM_OUT 8   
+#define PPM_OUT_HIGH PORTB |= _BV(0)
+#define PPM_OUT_LOW PORTB &= ~_BV(0)
+#define PPM_IN  8 // ICP1
 
+// RFM95 to Arduino HW connection
+#define NSS_PIN 10
+#define NRESET_PIN A0
+#define DIO0_PIN 2  // must be IRQ assignable

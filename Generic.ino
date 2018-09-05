@@ -21,8 +21,7 @@ uint8_t calculate_rssi(int tr_rssi) {
 
 void manage_servos() {
   if (failsafe_state)
-      for (uint8_t i = 0; i < SERVO_CHANNELS; i++)
-        Servos[i] = Servo_Failsafe[i];
+      set_servos_failsafe();
     else
       for (uint8_t i = 0; i < SERVO_CHANNELS; i++)
         Servos[i] = Servo_Buffer[i];
@@ -31,8 +30,9 @@ void manage_servos() {
   #endif
 }
 
-void failsafe() {
-  failsafe_state = true;
+void set_servos_failsafe() {
+  for (uint8_t i = 0; i < SERVO_CHANNELS; i++)
+        Servos[i] = Servo_Failsafe[i];
 }
 
 byte power_increase() {
