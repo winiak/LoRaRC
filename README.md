@@ -33,3 +33,10 @@ Hardware:
 
 Testing:
 - First in flight testing (not as controller) - altitude up to 800m and distance up to 900m. Video taken during the flight: https://youtu.be/bZgweGUDXOE ; Report from the flight: https://github.com/winiak/LoRaRC/blob/master/Reports/link_test_19.08.2018.xlsx
+
+
+External links:
+- https://revspace.nl/DecodingLora
+- https://www.thethingsnetwork.org/docs/lorawan
+- http://www.hoperf.com/upload/rf/RFM95_96_97_98W.pdf
+- Semtech LoRa Calculator: http://www.semtech.com/apps/filedown/down.php?file=SX1272LoRaCalculatorSetup1%271.zip
