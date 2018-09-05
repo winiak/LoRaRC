@@ -1,5 +1,18 @@
-static uint8_t calculated_rssi = 0;
 
+
+uint8_t calculate_lost_frames_rssi(unsigned long lost_frames) {
+  // calculate RSSI basing on lost frames
+  // lost frames may be given as
+  // - a counter of lost frames - no filter - short response, first good frame resets to zero, difficult to see when frame losts are shorter than half a second
+  // - an average of frames lost in portion of time - slight delay in response, easier to see when conditions are going bad
+  return 100 - round(100 * (lost_frames > LOST_FRAMES_COUNT ? LOST_FRAMES_COUNT : lost_frames) / LOST_FRAMES_COUNT); // 30 frames is a history
+}
+
+/**
+ * Calculate RSSI based RSSI reported by transmitter
+ * Return in %.
+ * EAsy but not reliable
+ */
 uint8_t calculate_rssi(int tr_rssi) {
   // Simpliest method used from Lora-net project
   tr_rssi = 157 + tr_rssi; // entire link budget
@@ -13,10 +26,7 @@ uint8_t calculate_rssi(int tr_rssi) {
   // Setting frames to show it in "%"
   if (tr_rssi > 100) tr_rssi = 100;
   if (tr_rssi < 0)  tr_rssi = 0;
-  calculated_rssi = tr_rssi;
-  if (failsafe_state)
-    calculated_rssi = 0;
-  return calculated_rssi;
+  return (failsafe_state ? 0 : tr_rssi);
 }
 
 void manage_servos() {

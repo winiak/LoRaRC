@@ -22,8 +22,8 @@ enum stateMachineDef {SETUP = 0, TRANSMIT = 1, RECEIVE = 2, BIND = 3 };
 byte tx_power_low = 4;    //  4=>2.5mW; 6=>5mW; 10=>10mW
 byte tx_power_high = 10;  //  12=>16mW; 14=>25mW; 16=>40mW; 18=>63mW; 20=>100mW
 
-int power_thr_high = -75;  // testing: 190 (-65); flying:  180 (-75)
-int power_thr_low = -95;   // testing: 180 (-75); flying:  160 (-95)
+int power_thr_high = -90;  // testing: 190 (-65); flying:  180 (-75)
+int power_thr_low = -100;   // testing: 180 (-75); flying:  160 (-95)
 byte tx_power_step = 2;
 #define TX_POWER_DELAY_FILTER sizeof(hop_list)*2
 
@@ -40,6 +40,8 @@ byte spread_factor = 6;
 #define base_frequency  868100000
 #define frequency_step  100000
 const uint8_t hop_list[] = {5,7,12};
+#define LOST_FRAMES_COUNT 30  // sizeof(hop_list) * 10
+
 
 // Servos & channels
 #define SERVO_CHANNELS 8

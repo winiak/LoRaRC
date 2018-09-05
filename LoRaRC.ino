@@ -35,6 +35,7 @@
   unsigned char RX_Buffer_Len = 0;
   int RX_RSSI;  // RSSI on receiver side
   int TX_RSSI;  // RSSI on transmitter side
+  static uint8_t calculated_rssi = 0;
   int counter = 0;
   
   static bool failsafe_state = false;
@@ -215,7 +216,8 @@ void loop() {
       Hopping();
       stateMachine = RECEIVE;
 
-      calculate_rssi(RX_RSSI);
+      calculated_rssi = calculate_rssi(RX_RSSI);
+      //calculated_rssi= calculate_lost_frames_rssi
       manage_servos();
       
 
@@ -243,7 +245,7 @@ void loop() {
     // IBUS
     #ifdef IBUS_module
       #ifdef DEBUG_RX_OUTPUT
-        Show delay of each frame
+        // Show delay of each frame
         Serial.print("\t Delayed[us]=");
         Serial.println(micros() - RX_frame_time, DEC);
       #endif //DEBUG_RX_OUTPUT
