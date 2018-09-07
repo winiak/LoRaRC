@@ -100,7 +100,9 @@ void loop() {
       #ifdef TX_SERVO_TESTER
         servoTester();                    // servo tester - change servo values continuously
       #endif
+      #if defined(DEBUG_RADIO_EXCH) || defined(DEBUG_CH_FREQ) || defined(DEBUG_ANALYZER) || defined(PPM_module)
       Serial.println();
+      #endif
       Hopping();
       if (no_RX_ack > 0) {                // ACKonwlege, check for return of the telemetry data
         #ifdef DEBUG_RADIO_EXCH

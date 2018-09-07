@@ -39,6 +39,7 @@ void manage_servos() {
   #ifdef INJECT_RSSI_IN_CH
     Servos[INJECT_RSSI_IN_CH] = map(calculated_rssi, 0, 100, 1000, 2000);
     Servos[INJECT_RSSI_IN_CH+1] = map(calculated_lost_frames_rssi, 0, 100, 1000, 2000);
+    Servos[INJECT_RSSI_IN_CH+2] = map(current_power, tx_power_low, tx_power_high, 1000, 2000);
   #endif
 }
 
