@@ -11,7 +11,8 @@ uint8_t calculate_lost_frames_rssi(unsigned long lost_frames) {
 /**
  * Calculate RSSI based RSSI reported by transmitter
  * Return in %.
- * EAsy but not reliable
+ * Easy but not reliable - I reported significant packets losts (Failsafe activated) when signal dropped below 55% (-102dB) 
+ * It looks like is would be good to adapt the dynamics to sensitivity (SF and BW dependent) and TX power
  */
 uint8_t calculate_rssi(int tr_rssi) {
   // Simpliest method used from Lora-net project

@@ -22,6 +22,30 @@ void setup_module() {
     // module works on hardware serial - shall be 57600 or 115200
 }
 
+void send_message(uint8_t messageID, void * payload, uint8_t messageSize) {
+  uint8_t frame_size = 0;
+  char frame_buffer[32];
+  
+  frame_buffer[0] = '$';
+  frame_buffer[1] = 'M';
+  frame_buffer[2] = '<';
+  frame_buffer[3] = messageSize;
+  frame_buffer[4] = messageID;
+  
+  uint8_t checksum = frame_size ^ messageID;
+  uint8_t * payloadPtr = (uint8_t*)payload;
+
+  for (uint8_t i = 5; i < messageSize + 5 ; ++i) {
+    uint8_t b = *(payloadPtr++);
+    checksum ^= b;
+    frame_buffer[i] = b;
+  }
+  
+  frame_buffer[messageSize + 5] = checksum;
+  
+  Serial.write(frame_buffer);
+}
+
 void send_request(uint8_t messageID) {
   uint8_t frame_size = 0;
   uint8_t checksum = frame_size ^ messageID;
