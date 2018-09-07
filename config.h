@@ -33,8 +33,8 @@ byte tx_power_step = 2;
 //    SF6,BW500 => 10ms; SF6,BW250 => 20ms; SF6,BW125 => 40ms; SF6,BW62,5 => 80ms
 unsigned long BW_low = 125E3;   //Hz
 unsigned long BW_high = 250E3;  //Hz
-unsigned long F_rate_low = 45000;  //us
-unsigned long F_rate_high = 25000; //us
+unsigned long F_rate_low = 44000;  //us
+unsigned long F_rate_high = 24000; //us
 byte spread_factor = 6;
 
 #define base_frequency  868100000

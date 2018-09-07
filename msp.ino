@@ -88,7 +88,7 @@ void send_servo_frame() {
   frame_buffer[MSP_MAXCHANNELS * 2 + 5];
 
   // Send to serial (soft serial does not work at 115200) - HW UART MUST BE USED
-  Serial.println(frame_buffer);
+  Serial.write(frame_buffer);
 }
 
 #endif // RX_module
