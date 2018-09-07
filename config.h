@@ -14,8 +14,8 @@ enum stateMachineDef {SETUP = 0, TRANSMIT = 1, RECEIVE = 2, BIND = 3 };
 
 // Communication type - select one
 //#define PPM_module  // using ICP for TX or declared for TX
-//#define IBUS_module   // using UART
-#define MSP_module   // using UART
+#define IBUS_module   // using UART
+//#define MSP_module   // using UART
 //#define FRSKY_module
 
 // Transmitting power in dBm: 2 to 20, default 17
@@ -33,8 +33,8 @@ byte tx_power_step = 2;
 //    SF6,BW500 => 10ms; SF6,BW250 => 20ms; SF6,BW125 => 40ms; SF6,BW62,5 => 80ms
 unsigned long BW_low = 125E3;   //Hz
 unsigned long BW_high = 250E3;  //Hz
-unsigned long F_rate_low = 45000;  //us
-unsigned long F_rate_high = 25000; //us
+unsigned long F_rate_low = 44000;  //us
+unsigned long F_rate_high = 24000; //us
 byte spread_factor = 6;
 
 #define base_frequency  868100000
