@@ -37,7 +37,7 @@
   int TX_RSSI;  // RSSI on transmitter side
   int counter = 0;
   
-  static bool failsafe_state = false;
+  static bool failsafe_state = true;
   
 void setup() {
   Serial.begin(115200);
@@ -129,7 +129,12 @@ void loop() {
         Serial.print(current_channel);
         #endif
         #ifdef DEBUG_RADIO_EXCH
-        Serial.print("\tTr RSSI: " + TX_RSSI + "\tRe RSSI: " + RX_RSSI + "\tPacket exchange time: " + micros() - packet_timer);
+          Serial.print("\tTr RSSI: ");
+          Serial.print(TX_RSSI);
+          Serial.print("\tRe RSSI: ");
+          Serial.print(RX_RSSI);
+          Serial.print("\tPacket exchange time: ");
+          Serial.print(micros() - packet_timer);
         #endif
         if (TX_RSSI < power_thr_low && power_delay_counter-- == 0) {
           power_increase();
