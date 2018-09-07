@@ -36,9 +36,10 @@
   int RX_RSSI;  // RSSI on receiver side
   int TX_RSSI;  // RSSI on transmitter side
   static uint8_t calculated_rssi = 0;
+  static uint8_t calculated_lost_frames_rssi = 0;
   int counter = 0;
   
-  static bool failsafe_state = true;
+  static bool failsafe_state = true;    // sending Failsafe values by default
   
 void setup() {
   Serial.begin(115200);
@@ -197,7 +198,8 @@ void loop() {
           Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
           #endif
         RX_last_frame_received = millis();
-        RX_hopping_time = micros()  + (TX_period * 2);
+        lost_frames = 0;
+        RX_hopping_time = micros()  + (TX_period);  //  * 2  first, let it be only one Frame time, then we will double that later
         if (RX_RSSI < power_thr_low && power_delay_counter-- == 0) {
           power_increase();
           power_delay_counter = TX_POWER_DELAY_FILTER;
@@ -222,7 +224,8 @@ void loop() {
       stateMachine = RECEIVE;
 
       calculated_rssi = calculate_rssi(RX_RSSI);
-      //calculated_rssi= calculate_lost_frames_rssi
+      calculated_lost_frames_rssi= calculate_lost_frames_rssi(lost_frames);
+      
       manage_servos();
       
 
@@ -235,10 +238,17 @@ void loop() {
       #endif
       break;
   }
-  // forced hopping (2 times slower than TX) if no data received
+  // forced hopping if no data received
+  // Make it 2 times slower than TX after one hopping loop
   if (micros() > RX_hopping_time) {
-    RX_hopping_time = micros()  + (TX_period * 2);
+    // Hopping Time Management
+    if (lost_frames < sizeof(hop_list))
+      RX_hopping_time = micros()  + (TX_period);  // first let's try to recover within hopping (if channel is busy)
+    else
+      RX_hopping_time = micros()  + (TX_period * 2); // if recover above failed, slow down hopping in RX by half
+      
     Hopping();
+    lost_frames++;
     #ifdef DEBUG_CH_FREQ
     Serial.print("No FR: ");
     Serial.print(millis() - RX_last_frame_received);
