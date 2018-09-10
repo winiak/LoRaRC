@@ -200,8 +200,8 @@ void loop() {
           Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
           #endif
         RX_last_frame_received = millis();
-        lost_frames = 0;
-        RX_hopping_time = micros()  + (TX_period);  //  * 2  first, let it be only one Frame time, then we will double that later
+        
+        RX_hopping_time = micros()  + (TX_period * 2);
         if (RX_RSSI < power_thr_low && power_delay_counter-- == 0) {
           power_increase();
           power_delay_counter = TX_POWER_DELAY_FILTER;
@@ -226,7 +226,7 @@ void loop() {
       stateMachine = RECEIVE;
 
       calculated_rssi = calculate_rssi(RX_RSSI);
-      calculated_lost_frames_rssi= calculate_lost_frames_rssi(lost_frames);
+      //calculated_lost_frames_rssi= calculate_lost_frames_rssi(lost_frames);
       
       manage_servos();
       
@@ -241,16 +241,13 @@ void loop() {
       break;
   }
   // forced hopping if no data received
-  // Make it 2 times slower than TX after one hopping loop
+  // TODO: Fast recover then slow recover
   if (micros() > RX_hopping_time) {
-    // Hopping Time Management
-    if (lost_frames < sizeof(hop_list))
-      RX_hopping_time = micros()  + (TX_period);  // first let's try to recover within hopping (if channel is busy)
-    else
-      RX_hopping_time = micros()  + (TX_period * 2); // if recover above failed, slow down hopping in RX by half
+
+    RX_hopping_time = micros()  + (TX_period * 2);
       
     Hopping();
-    lost_frames++;
+    
     #ifdef DEBUG_CH_FREQ
     Serial.print("No FR: ");
     Serial.print(millis() - RX_last_frame_received);
@@ -281,6 +278,8 @@ void loop() {
       if (!failsafe_state)
         send_servo_frame();
     #endif // MSP_module
+    if (failsafe_state)
+      Serial.println("Failsafe !!!");
   }
   // Failsafe
   if (millis() - RX_last_frame_received > FAILSAFE_DELAY_MS) {
@@ -288,7 +287,6 @@ void loop() {
     failsafe_state = true;
     // PPM - send data out of range
     set_servos_failsafe();
-    Serial.print("Failsafe !!!");
   }
       
   // obsługa konfiguracji

@@ -38,8 +38,8 @@ void manage_servos() {
         Servos[i] = Servo_Buffer[i];
   #ifdef INJECT_RSSI_IN_CH
     Servos[INJECT_RSSI_IN_CH] = map(calculated_rssi, 0, 100, 1000, 2000);
-    Servos[INJECT_RSSI_IN_CH+1] = map(calculated_lost_frames_rssi, 0, 100, 1000, 2000);
-    Servos[INJECT_RSSI_IN_CH+2] = map(current_power, tx_power_low, tx_power_high, 1000, 2000);
+    //Servos[INJECT_RSSI_IN_CH+1] = map(calculated_lost_frames_rssi, 0, 100, 1000, 2000);
+    //Servos[INJECT_RSSI_IN_CH+2] = map(current_power, tx_power_low, tx_power_high, 1000, 2000);
   #endif
 }
 
@@ -127,5 +127,3 @@ void PrintHex8(uint8_t *data, uint8_t length) // prints 8-bit data in hex with l
      Serial.print(" ");
    }
 }
-
-
