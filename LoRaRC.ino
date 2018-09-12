@@ -21,6 +21,7 @@
   #endif
   static unsigned long TX_period = F_rate_low;  // 7700 / 20000 / 40000  us
   static unsigned long ibus_frame_period = 7500; //us (so far the smallest delays with 7,5ms, measured frame rate 7,7 to 8,5ms
+  static unsigned long sbus_frame_period = 15000;
   static unsigned long RX_last_frame_received, RX_hopping_time;
   static unsigned long RX_frame_time;
   static unsigned long timer_start, timer_stop;
@@ -42,7 +43,12 @@
   static bool failsafe_state = true;    // sending Failsafe values by default
   
 void setup() {
-  Serial.begin(115200);
+  #ifdef SBUS_module
+    Serial.begin(100000, SERIAL_8E2);
+  #else
+    Serial.begin(115200);
+  #endif
+  
   // while (!Serial);
   wdt_enable(WDTO_250MS);
   
@@ -256,6 +262,12 @@ void loop() {
     #endif
   }
   if (micros() > RX_frame_time) {
+    // SBUS
+    #ifdef SBUS_module
+    send_servo_frame();   // fail safe is inside
+    RX_frame_time = micros() + sbus_frame_period;
+    #endif // SBUS_module
+    
     // IBUS
     #ifdef IBUS_module
       #ifdef DEBUG_RX_OUTPUT

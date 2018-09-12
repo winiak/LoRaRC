@@ -2,8 +2,8 @@
 
 /**
  * iBus protocol generator by Konrad Winiarski
- * - why iBus? Latency! Frame sent to FC every 7ms!
- * - 14 channels by default !!
+ * - why iBus? Latency! Frame sent to FC every 7ms! (can vary in wide range without impact on link quality)
+ * - 14 channels by default !! in 32 bytes
  * - support bi-directional communication (just in case)
  * - consumes UART, SoftSerial does not work at 115200 :(
  * 
