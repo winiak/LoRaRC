@@ -9,23 +9,23 @@ See frequencies over the countries: https://www.thethingsnetwork.org/docs/lorawa
 Play safe, have fun :).
 
 There are following targets to be achieved in this project ("+" means DONE):
-+ low cost communication modules (RFM95 + Arduino ProMini)
++ (+)Low cost communication modules (RFM95 + Arduino ProMini)
 - ready to use Arduino_Lora library, https://github.com/sandeepmistry/arduino-LoRa - requires updates or will be included as a part of this project
-+ TX and RX functionality in the same code - to simplify configuration, just select it by #define in config.h
-+ Bi-directional communication, possibility to read (limited) telemetry
-+ Frequency hopping, possibility to configure number of hop channels and frequencies
-+ Dynamic TX Power adjustment, based on RSSI level, configurable power range
++ (+)TX and RX functionality in the same code - to simplify configuration, just select it by #define in config.h
++ (+)Bi-directional communication, possibility to read (limited) telemetry
++ (+)Frequency hopping, possibility to configure number of hop channels and frequencies
++ (+)Dynamic TX Power adjustment, based on RSSI level, configurable power range
 - Dynamic Lora Bandwidht, depending most likely on lost frames
-+ Maximum 8 channels (compressed with method known from SBUS) to send 12 bytes
-+ Response frame limited to 6 bytes
++ (+)Maximum 8 channels (compressed with method known from SBUS) to send 12 bytes
++ (+)Response frame limited to 6 bytes
 - Possible frame rates: 12ms, 25ms, 45ms, 85ms (SF6, CRC, BW500..250..125..62.5KHz). Can be 30% less if telemetry will be turned off, but then fixed Power and fixed Bandwith must be applied - not in plans at the moment.
-+ RSSI is provided and injected to channel 8 (can be configured) and it is based on RSSI signal of LoRa modules.
++ (+)RSSI is provided and injected to channel 8 (can be configured) and it is based on RSSI signal of LoRa modules.
 - RSSI based on lost frames (TODO)
 - External protocols: 
-  + PPM as input
-  + IBUS (FlySky protocol - 7ms update time, 115kbs, non-inverted serial, can be used with native Serial of Arduino) as output
+  + (+)PPM as input
+  + (+)IBUS (FlySky protocol - 7ms update time, 115kbs, non-inverted serial, can be used with native Serial of Arduino) as output
   - IBUS as input (TODO)
-  + SBUS as output (DONE)
+  + (+)SBUS as output (DONE)
   - SBUS as input (TODO)
   - protocol for telemetry: MSP (TODO)
   - TBS CRLF as  input (some day..., anyone???)
@@ -35,7 +35,7 @@ There are following targets to be achieved in this project ("+" means DONE):
   - GPS Long
   - GPS Lat
   (that should be all what is mandatory when you loose Video link and may be needed to find lost plane)
-+ Failsafe in receiver to be provided (PPM data out of range, IBUS stops sending data)
++ (+)Failsafe in receiver to be provided (PPM data out of range, IBUS stops sending data)
 - Setup process is considered (to configure and store data without need of reprogramming)
 - Binding process is considered, although, currently there is no header in the data frame, only CRC is checked, therefore frequency hopping protects us from failure ;)
 
