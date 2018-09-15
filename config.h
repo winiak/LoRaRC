@@ -48,7 +48,7 @@ const uint8_t hop_list[] = {5,7,12};
 volatile unsigned int Servo_Buffer[SERVO_CHANNELS] = {1500, 1500, 1000, 1500, 1500, 1500, 1500, 1500};
 unsigned int Servos[SERVO_CHANNELS] = {1500, 1500, 1000, 1500, 1500, 1500, 1500, 1500};  
 unsigned int Servo_Failsafe[SERVO_CHANNELS] = {1500, 1500, 900, 1500, 1500, 1500, 1500, 150};
-#define FAILSAFE_DELAY_MS 200
+#define FAILSAFE_DELAY_MS 800
 
 #define SERVO_SHIFT 0   //(-16)   // PPM = -16  |  others = 0
 

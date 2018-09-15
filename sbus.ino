@@ -50,7 +50,7 @@ void send_servo_frame(){
 
     uint8_t stateByte = 0x00;
     
-    if (lost_frames > 6) {
+    if (lost_frames > 12) {
         stateByte |= SBUS_STATE_SIGNALLOSS;
     }
     if (failsafe_state) {
