@@ -1,5 +1,19 @@
+//#define TEST_TX_MODULE
+#define TEST_RX_MODULE
 
-enum stateMachineDef {SETUP = 0, TRANSMIT = 1, TRANSMITTING = 2, RECEIVE = 3, BIND = 4 };
+#ifdef TEST_TX_MODULE
+  //#define DEBUG_ANALYZER
+  #define DEBUG_RADIO_EXCH
+  #define DEBUG_CH_FREQ
+  #define TX_SERVO_TESTER
+  #define TX_module
+  #define PPM_module
+#endif
+
+#ifdef TEST_RX_MODULE
+  #define RX_module
+  #define DEBUG_ANALYZER
+#endif
 
 // Dubugging - select any
 //#define DEBUG_CH_FREQ
@@ -10,12 +24,12 @@ enum stateMachineDef {SETUP = 0, TRANSMIT = 1, TRANSMITTING = 2, RECEIVE = 3, BI
 
 // Transmitter or Receiver - select one
 //#define TX_module
-#define RX_module
+//#define RX_module
 
 // Communication type - select one
 //#define PPM_module  // using ICP for TX or declared for TX
 //#define IBUS_module   // using UART
-#define SBUS_module   // using UART at 100000N2
+//#define SBUS_module   // using UART at 100000N2
 //#define MSP_module   // using UART
 
 // Transmitting power in dBm: 2 to 20, default 17
@@ -30,16 +44,18 @@ byte tx_power_step = 2;
 // Signal bandwidth and frame time 
 // full range 7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, 250E3, 500E3.
 // measured (16Bytes from Transmitter, 6Bytes from Receiver : 
-//    SF6,BW500 => 10ms; SF6,BW250 => 20ms; SF6,BW125 => 40ms; SF6,BW62,5 => 80ms
+//    SF6,BW500 => 12ms; SF6,BW250 => 22ms; SF6,BW125 => 43ms; SF6,BW62,5 => 83ms
 unsigned long BW_low = 125E3;   //Hz
 unsigned long BW_high = 250E3;  //Hz
 unsigned long F_rate_low = 45000;  //us
-unsigned long F_rate_high = 25000; //us
+unsigned long F_rate_high = 22000; //us
 byte spread_factor = 6;
 
 #define base_frequency  868100000
 #define frequency_step  100000
 const uint8_t hop_list[] = {5,7,12};
+#define RX_FAST_HOP_TIME_MUL 1.2
+#define RX_LOST_HOP_TIME_MUL 3
 #define LOST_FRAMES_COUNT 30  // sizeof(hop_list) * 10
 
 

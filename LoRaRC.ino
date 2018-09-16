@@ -13,6 +13,8 @@
 #include <avr/wdt.h>
 
 
+  enum stateMachineDef {SETUP = 0, TRANSMIT = 1, TRANSMITTING = 2, RECEIVE = 3, BIND = 4 };
+
   #ifdef TX_module
     stateMachineDef stateMachine = TRANSMIT;
   #endif
@@ -77,7 +79,7 @@ void setup() {
   wdt_reset();
   #ifdef DEBUG_ANALYZER
     #ifdef TX_module
-    Serial.println("HC\tTX RSSI\tRX RSSI\tLost\tPacket t[ms]\tTX Pwr[dBm]\tRX Pwr[dBm]\tInput");
+    Serial.println("HC\tTX RSSI\tRX RSSI\ \tPacket t[ms]\tTX Pwr[dBm]\tRX Pwr[dBm]\tInput");
     #endif //TX_module
   #endif // DEBUG_ANALYZER
 
@@ -101,8 +103,7 @@ void loop() {
  * Transmitter
  */
 #ifdef TX_module
-  switch (stateMachine) {
-    case TRANSMIT:    // transmit data then switch to RECEIVE
+  if (stateMachine == TRANSMIT) { // transmit data then switch to RECEIVE
       #ifdef TX_SERVO_TESTER
         servoTester();                    // servo tester - change servo values continuously
       #endif
@@ -110,6 +111,9 @@ void loop() {
       Serial.println();
       #endif
       Hopping();
+
+      //Serial.print(current_channel);
+      //Serial.print("\t");
       if (no_RX_ack > 0) {                // ACKonwlege, check for return of the telemetry data
         #ifdef DEBUG_RADIO_EXCH
         Serial.print("\t\t\t NO ACK: ");
@@ -125,16 +129,17 @@ void loop() {
       TX_Buffer_Len = buildServoData();
       packet_timer = micros();
       sendBufferData();
-      //Serial.print(micros() - packet_timer); 
       stateMachine = TRANSMITTING;
       no_RX_ack++;
-      break;
-    case TRANSMITTING:
-      if (LoRa.isTransmitting() == false)
+  }
+  if (stateMachine == TRANSMITTING) {
+      //while (LoRa.isTransmitting()) { }
+      if (LoRa.isTransmitting() == false) {
         stateMachine = RECEIVE;
+      }
       // UART read - here or in main loop ?
-      break;  
-    case RECEIVE:     // stay in RECEIVE and wait for data until next TX period
+  }
+  if (stateMachine == RECEIVE) {  // stay in RECEIVE and wait for data until next TX period
       if (receiveData(6)) {
         no_RX_ack = 0;
         TX_RSSI = RX_Buffer[0] - 255;// - 255; "0" to display byte values instead of dBm
@@ -148,6 +153,7 @@ void loop() {
           Serial.print("\tRe RSSI: ");
           Serial.print(RX_RSSI);
           Serial.print("\tPacket exchange time: ");
+        // Display real time of whole frame
           Serial.print(micros() - packet_timer);
         #endif
         if (TX_RSSI < power_thr_low && power_delay_counter-- == 0) {
@@ -159,12 +165,8 @@ void loop() {
           power_delay_counter = TX_POWER_DELAY_FILTER;
         }
       }
-      break;
-    case SETUP:
-      break;
-    default: // controller
-      break;
   }
+
   // State machine controller
   if (micros() > transmit_time) {
     
@@ -189,7 +191,8 @@ void loop() {
 
 #endif // TX_module
 
-/**
+
+/************************************************************************
  * Receiver
  */
 #ifdef RX_module
@@ -204,16 +207,17 @@ void loop() {
       //Serial.println("Test");
       if (int s = receiveData(RX_Buffer_Len)) {
           #ifdef DEBUG_ANALYZER
-          Serial.println(""); Serial.print(s); Serial.print("\t");
+          Serial.println(""); Serial.print(s); Serial.print("bytes\t");
           #endif
         stateMachine = TRANSMIT;
         decodeServoData();
           #ifdef DEBUG_ANALYZER
           Serial.print(millis() - RX_last_frame_received); Serial.print("ms\t");
+          Serial.print(current_power); Serial.print("dBm\t");
           #endif
         RX_last_frame_received = millis();
         
-        RX_hopping_time = micros()  + (TX_period * 2);
+        RX_hopping_time = micros()  + (TX_period * RX_FAST_HOP_TIME_MUL);
         if (RX_RSSI < power_thr_low && power_delay_counter-- == 0) {
           power_increase();
           power_delay_counter = TX_POWER_DELAY_FILTER;
@@ -259,7 +263,7 @@ void loop() {
   // TODO: Fast recover then slow recover
   if (micros() > RX_hopping_time) {
 
-    RX_hopping_time = micros()  + (TX_period * 2);
+    RX_hopping_time = micros()  + (TX_period * RX_LOST_HOP_TIME_MUL); // slow
       
     Hopping();
     

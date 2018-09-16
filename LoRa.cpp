@@ -130,7 +130,7 @@ int LoRaClass::begin(long frequency)
   writeRegister(REG_MODEM_CONFIG_3, 0x04);
 
   // set output power to 17 dBm
-  setTxPower(17);
+  setTxPower(2);
 
   // put in standby mode
   idle();
