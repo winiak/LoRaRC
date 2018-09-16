@@ -1,22 +1,22 @@
 
-enum stateMachineDef {SETUP = 0, TRANSMIT = 1, RECEIVE = 2, BIND = 3 };
+enum stateMachineDef {SETUP = 0, TRANSMIT = 1, TRANSMITTING = 2, RECEIVE = 3, BIND = 4 };
 
 // Dubugging - select any
 //#define DEBUG_CH_FREQ
 //#define DEBUG_RADIO_EXCH
-#define DEBUG_ANALYZER
+//#define DEBUG_ANALYZER
 //#define TX_SERVO_TESTER
 //#define DEBUG_RX_OUTPUT
 
 // Transmitter or Receiver - select one
-#define TX_module
-//#define RX_module
+//#define TX_module
+#define RX_module
 
 // Communication type - select one
-#define PPM_module  // using ICP for TX or declared for TX
+//#define PPM_module  // using ICP for TX or declared for TX
 //#define IBUS_module   // using UART
+#define SBUS_module   // using UART at 100000N2
 //#define MSP_module   // using UART
-//#define FRSKY_module
 
 // Transmitting power in dBm: 2 to 20, default 17
 byte tx_power_low = 4;    //  4=>2.5mW; 6=>5mW; 10=>10mW
@@ -47,8 +47,8 @@ const uint8_t hop_list[] = {5,7,12};
 #define SERVO_CHANNELS 8
 volatile unsigned int Servo_Buffer[SERVO_CHANNELS] = {1500, 1500, 1000, 1500, 1500, 1500, 1500, 1500};
 unsigned int Servos[SERVO_CHANNELS] = {1500, 1500, 1000, 1500, 1500, 1500, 1500, 1500};  
-unsigned int Servo_Failsafe[SERVO_CHANNELS] = {1500, 1500, 900, 1500, 1500, 1500, 1500, 1500};
-#define FAILSAFE_DELAY_MS 200
+unsigned int Servo_Failsafe[SERVO_CHANNELS] = {1500, 1500, 900, 1500, 1500, 1500, 1500, 150};
+#define FAILSAFE_DELAY_MS 800
 
 #define SERVO_SHIFT 0   //(-16)   // PPM = -16  |  others = 0
 

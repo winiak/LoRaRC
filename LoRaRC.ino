@@ -126,10 +126,14 @@ void loop() {
       packet_timer = micros();
       sendBufferData();
       //Serial.print(micros() - packet_timer); 
-      stateMachine = RECEIVE;
+      stateMachine = TRANSMITTING;
       no_RX_ack++;
       break;
-      
+    case TRANSMITTING:
+      if (LoRa.isTransmitting() == false)
+        stateMachine = RECEIVE;
+      // UART read - here or in main loop ?
+      break;  
     case RECEIVE:     // stay in RECEIVE and wait for data until next TX period
       if (receiveData(6)) {
         no_RX_ack = 0;
@@ -163,6 +167,7 @@ void loop() {
   }
   // State machine controller
   if (micros() > transmit_time) {
+    
     #ifdef DEBUG_ANALYZER
       //Serial.println("TX RSSI\tRX RSSI\tLost");
       Serial.print(current_channel); Serial.print("\t");
@@ -176,6 +181,7 @@ void loop() {
         Serial.print("\t"); Serial.print(check_PPM_corrupted() ? "0" : "111");   
       #endif
     #endif
+    
     transmit_time = micros() + TX_period;
     timer_start = micros();
     stateMachine = TRANSMIT;
@@ -228,6 +234,9 @@ void loop() {
       TX_Buffer[5] = 0;
       packet_timer = micros();
       sendBufferData();
+      while (LoRa.isTransmitting()) {
+        ;
+      }
       Hopping();
       stateMachine = RECEIVE;
 
@@ -296,8 +305,9 @@ void loop() {
   // Failsafe
   if (millis() - RX_last_frame_received > FAILSAFE_DELAY_MS) {
     // IBUS, MSP - stop transmitting data
-    failsafe_state = true;
     // PPM - send data out of range
+    // SBUS - set failsafe flag
+    failsafe_state = true;
     set_servos_failsafe();
   }
       

@@ -37,9 +37,9 @@ void manage_servos() {
       for (uint8_t i = 0; i < SERVO_CHANNELS; i++)
         Servos[i] = Servo_Buffer[i];
   #ifdef INJECT_RSSI_IN_CH
-    Servos[INJECT_RSSI_IN_CH] = map(calculated_rssi, 0, 100, 1000, 2000);
-    //Servos[INJECT_RSSI_IN_CH+1] = map(calculated_lost_frames_rssi, 0, 100, 1000, 2000);
-    //Servos[INJECT_RSSI_IN_CH+2] = map(current_power, tx_power_low, tx_power_high, 1000, 2000);
+    Servos[INJECT_RSSI_IN_CH] = map(calculated_rssi, 0, 100, 1000, 2000);   // inject calculated RSSI to %
+    //Servos[INJECT_RSSI_IN_CH-1] = map(calculated_lost_frames_rssi, 0, 100, 1000, 2000);   // inject RSSI based on lost frames
+    //Servos[INJECT_RSSI_IN_CH+2] = map(current_power, tx_power_low, tx_power_high, 1000, 2000);  // inject current power level
   #endif
 }
 
@@ -113,7 +113,7 @@ bool sendBufferData() {
     return false;
   LoRa.beginPacket(true);   // false - explicit, true - implicit
   sent_data_len = LoRa.write(TX_Buffer, TX_Buffer_Len);
-  LoRa.endPacket();
+  LoRa.endPacket(true);   // true = async / non-blocking mode
   TX_Buffer_Len = 0;
   return sent_data_len;
 }
