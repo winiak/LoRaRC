@@ -9,8 +9,8 @@ enum stateMachineDef {SETUP = 0, TRANSMIT = 1, RECEIVE = 2, BIND = 3 };
 //#define DEBUG_RX_OUTPUT
 
 // Transmitter or Receiver - select one
-//#define TX_module
-#define RX_module
+#define TX_module
+//#define RX_module
 
 // Communication type - select one
 //#define PPM_module  // using ICP for TX or declared for TX
