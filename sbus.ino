@@ -11,8 +11,6 @@
  * If there is "\0" Serial function deos not send it. When trying to change data type or setting fixed buffer length, there is an error during compilation.
  * Maybe someone will find and fix the proble someday. For now, there are plenty of Serial.write() calls.
  */
-#ifdef RX_module
-
 #define RC_CHANNEL_MIN 990
 #define RC_CHANNEL_MAX 2010
 
@@ -27,6 +25,10 @@
 #define SBUS_STATE_FAILSAFE 0x08
 #define SBUS_STATE_SIGNALLOSS 0x04
 #define SBUS_UPDATE_RATE 15 //ms
+
+
+#ifdef RX_module
+
 
 void setup_module() {
     // module works on hardware serial - must be 100000/8E2
@@ -116,5 +118,74 @@ void send_servo_frame(){
 
 
 #endif // RX module
+
+#ifdef TX_module
+    int _channels[18];
+    int _failsafe;
+    long _goodFrames;
+    long _lostFrames;
+    long _decoderErrorFrames;
+    long long _lastGoodFrame;
+    
+boolean read_frame() {
+  static byte buffer[SBUS_PACKET_LENGTH];
+  static byte buffer_index = 0;
+  while (Serial.available()) {
+    byte rx = Serial.read();
+    if (buffer_index == 0 && rx != SBUS_FRAME_HEADER) {
+      //incorrect start byte, out of sync
+      _decoderErrorFrames++;
+      continue;      
+    }
+    buffer[buffer_index++] = rx;
+
+    if (buffer_index == 25) {
+      buffer_index = 0;
+      if (buffer[24] != SBUS_FRAME_FOOTER) {
+        //incorrect end byte, out of sync
+        _decoderErrorFrames++;
+        continue;
+      }
+      _goodFrames++;
+
+      Servos[0]  = ((buffer[1]    |buffer[2]<<8)                 & 0x07FF);
+      Servos[1]  = ((buffer[2]>>3 |buffer[3]<<5)                 & 0x07FF);
+      Servos[2]  = ((buffer[3]>>6 |buffer[4]<<2 |buffer[5]<<10)  & 0x07FF);
+      Servos[3]  = ((buffer[5]>>1 |buffer[6]<<7)                 & 0x07FF);
+      Servos[4]  = ((buffer[6]>>4 |buffer[7]<<4)                 & 0x07FF);
+      Servos[5]  = ((buffer[7]>>7 |buffer[8]<<1 |buffer[9]<<9)   & 0x07FF);
+      Servos[6]  = ((buffer[9]>>2 |buffer[10]<<6)                & 0x07FF);
+      Servos[7]  = ((buffer[10]>>5|buffer[11]<<3)                & 0x07FF);
+      Servos[8]  = ((buffer[12]   |buffer[13]<<8)                & 0x07FF);
+      Servos[9]  = ((buffer[13]>>3|buffer[14]<<5)                & 0x07FF);
+      Servos[10] = ((buffer[14]>>6|buffer[15]<<2|buffer[16]<<10) & 0x07FF);
+      Servos[11] = ((buffer[16]>>1|buffer[17]<<7)                & 0x07FF);
+      Servos[12] = ((buffer[17]>>4|buffer[18]<<4)                & 0x07FF);
+      Servos[13] = ((buffer[18]>>7|buffer[19]<<1|buffer[20]<<9)  & 0x07FF);
+      Servos[14] = ((buffer[20]>>2|buffer[21]<<6)                & 0x07FF);
+      Servos[15] = ((buffer[21]>>5|buffer[22]<<3)                & 0x07FF);
+
+      ((buffer[23])      & 0x0001) ? Servos[16] = 2047: Servos[16] = 0;
+      ((buffer[23] >> 1) & 0x0001) ? Servos[17] = 2047: Servos[17] = 0;
+
+      if ((buffer[23] >> 3) & 0x0001) {
+        failsafe_state = true;
+      } else {
+        failsafe_state = false;
+      }
+
+      if ((buffer[23] >> 2) & 0x0001) {
+        _lostFrames++;
+      }
+
+      _lastGoodFrame = millis();
+
+    }
+    
+  }
+  
+}
+
+#endif // TX_module
 
 #endif // IBUS_module

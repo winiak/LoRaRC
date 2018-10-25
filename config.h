@@ -1,10 +1,10 @@
 //#define TEST_TX_MODULE
-#define TEST_RX_MODULE
+//#define TEST_RX_MODULE
 
 #ifdef TEST_TX_MODULE
-  //#define DEBUG_ANALYZER
-  #define DEBUG_RADIO_EXCH
-  #define DEBUG_CH_FREQ
+  #define DEBUG_ANALYZER
+  //#define DEBUG_RADIO_EXCH
+  //#define DEBUG_CH_FREQ
   #define TX_SERVO_TESTER
   #define TX_module
   #define PPM_module
@@ -23,7 +23,7 @@
 //#define DEBUG_RX_OUTPUT
 
 // Transmitter or Receiver - select one
-//#define TX_module
+#define TX_module
 //#define RX_module
 
 // Communication type - select one
